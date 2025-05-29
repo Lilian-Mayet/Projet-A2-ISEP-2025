@@ -14,7 +14,7 @@ import random # Si on garde le sous-échantillonnage
 FUNDUS_IMAGE_WIDTH = 495
 BOTTOM_CROP_PIXELS_OCT = 100 # Pour l'image OCT
 BOTTOM_CROP_PIXELS_MASK = 0 # Si les masques sont déjà à la bonne hauteur après découpage OCT
-
+PLOT_3D_AS_MESH = False  # Mettre à False pour un nuage de points rapide, True pour un maillage
 INITIAL_ANGLE_DEGREES = 0.0
 ANGLE_INCREMENT_DEGREES = 3.75
 
@@ -183,7 +183,7 @@ def plot_3d_surface_matplotlib(points_3d, title="Surface 3D", is_mesh=True, grid
             # Afficher la surface maillée
             # `rstride` et `cstride` contrôlent la finesse du maillage affiché (pas de l'interpolation)
             surf = ax.plot_surface(X_grid, Y_grid, Z_grid, cmap='viridis', edgecolor='none', rstride=1, cstride=1, antialiased=True, shade=True, linewidth=0)
-            ax.axes.set_zlim3d(bottom=0, top=500)
+            
             # fig.colorbar(surf, shrink=0.5, aspect=10, label="Profondeur Z (recalée)") # Optionnel
             print("    Surface maillée tracée.")
         except Exception as e:
@@ -193,7 +193,7 @@ def plot_3d_surface_matplotlib(points_3d, title="Surface 3D", is_mesh=True, grid
             
     else: # Afficher comme un nuage de points
         ax.scatter(x_coords, y_coords, z_coords, s=1, c=z_coords, cmap='viridis', alpha=0.6)
-
+    ax.axes.set_zlim3d(bottom=0, top=500)
     ax.set_xlabel("X (pixels)")
     ax.set_ylabel("Y (pixels)")
     ax.set_zlabel("Profondeur Z (pixels relatifs)")
@@ -415,7 +415,7 @@ def process_oct_series(series_dir_path, mask1_dir_path, mask2_dir_path, output_d
         )
         
         if points_3d_reconstructed.size > 0:
-            MAX_POINTS_FOR_3D_PLOT = 1000 # Par exemple, limite à 50 000 points pour l'affichage
+            MAX_POINTS_FOR_3D_PLOT = 3000 # Par exemple, limite à 50 000 points pour l'affichage
             
             if points_3d_reconstructed.shape[0] > MAX_POINTS_FOR_3D_PLOT:
                 print(f"  Sous-échantillonnage des points 3D pour l'affichage ({points_3d_reconstructed.shape[0]} -> {MAX_POINTS_FOR_3D_PLOT}).")
@@ -428,7 +428,7 @@ def process_oct_series(series_dir_path, mask1_dir_path, mask2_dir_path, output_d
             plot_3d_surface_matplotlib(
                 points_for_plot, # Utiliser les points sous-échantillonnés
                 title=plot_title, 
-                is_mesh=True, 
+                is_mesh=PLOT_3D_AS_MESH,  
                 grid_resolution_factor=0.8 # Ce facteur sera maintenant appliqué sur moins de points
             )
 
