@@ -7,7 +7,7 @@ import glob
 import random # Pour le sous-échantillonnage aléatoire
 
 # --- Configuration ---
-BASE_MASK_DIR = 'R_BIN1/R_BIN1' # Ou 'R_BIN2/R_BIN2'
+BASE_MASK_DIR = 'R_BIN1' # Ou 'R_BIN2/R_BIN2'
 PATIENT_SERIES_SUBDIR = '01_CAB_OD'
 
 MASK_SERIES_DIR = os.path.join(BASE_MASK_DIR, PATIENT_SERIES_SUBDIR)

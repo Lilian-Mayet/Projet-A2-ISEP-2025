@@ -183,6 +183,7 @@ def plot_3d_surface_matplotlib(points_3d, title="Surface 3D", is_mesh=True, grid
             # Afficher la surface maillée
             # `rstride` et `cstride` contrôlent la finesse du maillage affiché (pas de l'interpolation)
             surf = ax.plot_surface(X_grid, Y_grid, Z_grid, cmap='viridis', edgecolor='none', rstride=1, cstride=1, antialiased=True, shade=True, linewidth=0)
+            ax.axes.set_zlim3d(bottom=0, top=500)
             # fig.colorbar(surf, shrink=0.5, aspect=10, label="Profondeur Z (recalée)") # Optionnel
             print("    Surface maillée tracée.")
         except Exception as e:
