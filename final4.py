@@ -173,7 +173,7 @@ def plot_3d_surface_matplotlib(points_3d, title="Surface 3D", is_mesh=True, grid
         # 'linear' est souvent un bon compromis. 'cubic' peut être plus lisse mais plus lent/instable.
         # 'nearest' est rapide mais donne un aspect en blocs.
         try:
-            Z_grid = griddata((x_coords, y_coords), z_coords, (X_grid, Y_grid), method='linear')
+            Z_grid = griddata((x_coords, y_coords), z_coords, (X_grid, Y_grid), method='linear',rescale=False)
             print("    Interpolation griddata terminée.")
 
             # plot_surface n'aime pas les NaNs, bien que Matplotlib essaie de les gérer.
@@ -429,7 +429,7 @@ def process_oct_series(series_dir_path, mask1_dir_path, mask2_dir_path, output_d
                 points_for_plot, # Utiliser les points sous-échantillonnés
                 title=plot_title, 
                 is_mesh=True, 
-                grid_resolution_factor=0.7 # Ce facteur sera maintenant appliqué sur moins de points
+                grid_resolution_factor=0.8 # Ce facteur sera maintenant appliqué sur moins de points
             )
 
             # ** Modèle Mathématique **
