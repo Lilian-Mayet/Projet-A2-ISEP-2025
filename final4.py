@@ -18,6 +18,13 @@ PLOT_3D_AS_MESH = False  # Mettre à False pour un nuage de points rapide, True 
 INITIAL_ANGLE_DEGREES = 0.0
 ANGLE_INCREMENT_DEGREES = 3.75
 
+NN_INPUT_HEIGHT = 128  
+NN_INPUT_WIDTH = 256   
+
+MODEL_ILM_PATH = 'oct_segmentation_mask_1.keras' 
+MODEL_HRC_PATH = 'oct_segmentation_mask_2.keras' 
+
+
 # Pour l'extraction de la surface du masque
 PIXEL_OF_INTEREST_IN_MASK = 255 # Valeur des pixels d'intérêt dans le masque
 
