@@ -415,7 +415,7 @@ def process_oct_series(series_dir_path, mask1_dir_path, mask2_dir_path, output_d
         )
         
         if points_3d_reconstructed.size > 0:
-            MAX_POINTS_FOR_3D_PLOT = 3000 # Par exemple, limite à 50 000 points pour l'affichage
+            MAX_POINTS_FOR_3D_PLOT = 5000 # Par exemple, limite à 50 000 points pour l'affichage
             
             if points_3d_reconstructed.shape[0] > MAX_POINTS_FOR_3D_PLOT:
                 print(f"  Sous-échantillonnage des points 3D pour l'affichage ({points_3d_reconstructed.shape[0]} -> {MAX_POINTS_FOR_3D_PLOT}).")
