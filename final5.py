@@ -33,11 +33,22 @@ try:
             intersection = tf.keras.backend.sum(y_true_f * y_pred_f)
             return (2. * intersection + smooth) / (tf.keras.backend.sum(y_true_f) + tf.keras.backend.sum(y_pred_f) + smooth)
     loaded_ILM_model = tf.keras.models.load_model(MODEL_ILM_PATH, custom_objects={'dice_coef_keras': dice_coef_keras} if 'dice_coef_keras' in locals() else None)
-    print("Modèle chargé avec succès.")
+    print("Modèle ILM chargé avec succès.")
 except Exception as e:
-    print(f"Erreur lors du chargement du modèle: {e}")
+    print(f"Erreur lors du chargement du modèle ILM: {e}")
     exit()
 
+try:
+    def dice_coef_keras(y_true, y_pred, smooth=1e-6): # Doit être défini si utilisé à l'entraînement
+            y_true_f = tf.keras.backend.flatten(y_true)
+            y_pred_f = tf.keras.backend.flatten(y_pred)
+            intersection = tf.keras.backend.sum(y_true_f * y_pred_f)
+            return (2. * intersection + smooth) / (tf.keras.backend.sum(y_true_f) + tf.keras.backend.sum(y_pred_f) + smooth)
+    loaded_HRC_model = tf.keras.models.load_model(MODEL_ILM_PATH, custom_objects={'dice_coef_keras': dice_coef_keras} if 'dice_coef_keras' in locals() else None)
+    print("Modèle chargé HRC avec succès.")
+except Exception as e:
+    print(f"Erreur lors du chargement du modèle HRC: {e}")
+    exit()
 
 # Pour l'extraction de la surface du masque
 PIXEL_OF_INTEREST_IN_MASK = 255 # Valeur des pixels d'intérêt dans le masque
@@ -324,15 +335,18 @@ def process_oct_series(series_dir_path, mask1_dir_path, mask2_dir_path, output_d
         all_min_rows_upper_m1.append(min_row_um1)
 
         # ------- TRAITEMENT MASQUE 2 (ex: HRC ou autre limite) --------
-        _,mask2,_ = predict_mask_with_resizing(image_path=img_path,model= loaded_ILM_model,nn_h= NN_INPUT_HEIGHT,nn_w= NN_INPUT_WIDTH)
+        _,mask2,_ = predict_mask_with_resizing(image_path=img_path,model= loaded_HRC_model,nn_h= NN_INPUT_HEIGHT,nn_w= NN_INPUT_WIDTH)
+  
+
+        
+
         upper_m2, lower_m2 = get_surface_lines_from_mask(mask2, PIXEL_OF_INTEREST_IN_MASK)
 
-        else:
-            print(f"    Masque 2 non trouvé: {mask_path_being_processed}")
 
+        
         all_upper_coords_m2.append(upper_m2)
         all_lower_coords_m2.append(lower_m2)
-        # all_min_rows_upper_m2.append(min_row_um2) # Si besoin
+
 
 # ** Préparation pour le GIF **
         frame_for_gif = bgr_oct_processed.copy() # Image sur laquelle on va dessiner
