@@ -9,6 +9,7 @@ from scipy.optimize import curve_fit
 from scipy.interpolate import griddata
 import argparse # Pour prendre le répertoire en argument de ligne de commande
 import random # Si on garde le sous-échantillonnage
+from mask1_NN import predict_mask_with_resizing
 
 # --- Configuration ---
 FUNDUS_IMAGE_WIDTH = 495
@@ -23,7 +24,31 @@ NN_INPUT_WIDTH = 256
 
 MODEL_ILM_PATH = 'oct_segmentation_mask_1.keras' 
 MODEL_HRC_PATH = 'oct_segmentation_mask_2.keras' 
+import tensorflow as tf
 
+try:
+    def dice_coef_keras(y_true, y_pred, smooth=1e-6): # Doit être défini si utilisé à l'entraînement
+            y_true_f = tf.keras.backend.flatten(y_true)
+            y_pred_f = tf.keras.backend.flatten(y_pred)
+            intersection = tf.keras.backend.sum(y_true_f * y_pred_f)
+            return (2. * intersection + smooth) / (tf.keras.backend.sum(y_true_f) + tf.keras.backend.sum(y_pred_f) + smooth)
+    loaded_ILM_model = tf.keras.models.load_model(MODEL_ILM_PATH, custom_objects={'dice_coef_keras': dice_coef_keras} if 'dice_coef_keras' in locals() else None)
+    print("Modèle ILM chargé avec succès.")
+except Exception as e:
+    print(f"Erreur lors du chargement du modèle ILM: {e}")
+    exit()
+
+try:
+    def dice_coef_keras(y_true, y_pred, smooth=1e-6): # Doit être défini si utilisé à l'entraînement
+            y_true_f = tf.keras.backend.flatten(y_true)
+            y_pred_f = tf.keras.backend.flatten(y_pred)
+            intersection = tf.keras.backend.sum(y_true_f * y_pred_f)
+            return (2. * intersection + smooth) / (tf.keras.backend.sum(y_true_f) + tf.keras.backend.sum(y_pred_f) + smooth)
+    loaded_HRC_model = tf.keras.models.load_model(MODEL_HRC_PATH, custom_objects={'dice_coef_keras': dice_coef_keras} if 'dice_coef_keras' in locals() else None)
+    print("Modèle chargé HRC avec succès.")
+except Exception as e:
+    print(f"Erreur lors du chargement du modèle HRC: {e}")
+    exit()
 
 # Pour l'extraction de la surface du masque
 PIXEL_OF_INTEREST_IN_MASK = 255 # Valeur des pixels d'intérêt dans le masque
@@ -293,48 +318,35 @@ def process_oct_series(series_dir_path, mask1_dir_path, mask2_dir_path, output_d
         upper_m2, lower_m2 = None, None # min_row_um2 si besoin
 
         # ------- TRAITEMENT MASQUE 1 (ex: ILM) --------
-        mask_path_being_processed = os.path.join(mask1_dir_path, base_filename)
-        # Tenter avec _BIN1.png si le nom direct ne marche pas
-        if not os.path.exists(mask_path_being_processed):
-            mask_path_png_alt = os.path.join(mask1_dir_path, os.path.splitext(base_filename)[0] + "_BIN1.png")
-            if os.path.exists(mask_path_png_alt): mask_path_being_processed = mask_path_png_alt
+        _,mask1,_ = predict_mask_with_resizing(image_path=img_path,model= loaded_ILM_model,nn_h= NN_INPUT_HEIGHT,nn_w= NN_INPUT_WIDTH)
+  
+
         
-        if os.path.exists(mask_path_being_processed):
-            mask1_loaded = cv2.imread(mask_path_being_processed, cv2.IMREAD_GRAYSCALE)
-            mask1_processed = preprocess_mask(mask1_loaded, target_shape_for_masks)
-            if mask1_processed is not None:
-                upper_m1, lower_m1 = get_surface_lines_from_mask(mask1_processed, PIXEL_OF_INTEREST_IN_MASK)
-                if upper_m1 is not None:
-                    valid_upper_m1_pts = upper_m1[upper_m1 != -1]
-                    if valid_upper_m1_pts.size > 0:
-                        min_row_um1 = np.min(valid_upper_m1_pts)
-        else:
-            print(f"    Masque 1 non trouvé: {mask_path_being_processed}")
+
+        upper_m1, lower_m1 = get_surface_lines_from_mask(mask1, PIXEL_OF_INTEREST_IN_MASK)
+        if upper_m1 is not None:
+            valid_upper_m1_pts = upper_m1[upper_m1 != -1]
+            if valid_upper_m1_pts.size > 0:
+                min_row_um1 = np.min(valid_upper_m1_pts)
+
         
         all_upper_coords_m1.append(upper_m1)
         all_lower_coords_m1.append(lower_m1)
         all_min_rows_upper_m1.append(min_row_um1)
 
         # ------- TRAITEMENT MASQUE 2 (ex: HRC ou autre limite) --------
-        mask_path_being_processed = os.path.join(mask2_dir_path, base_filename)
-        if not os.path.exists(mask_path_being_processed):
-            mask_path_png_alt = os.path.join(mask2_dir_path, os.path.splitext(base_filename)[0] + "_BIN2.png")
-            if os.path.exists(mask_path_png_alt): mask_path_being_processed = mask_path_png_alt
+        _,mask2,_ = predict_mask_with_resizing(image_path=img_path,model= loaded_HRC_model,nn_h= NN_INPUT_HEIGHT,nn_w= NN_INPUT_WIDTH)
+  
 
-        if os.path.exists(mask_path_being_processed):
-            mask2_loaded = cv2.imread(mask_path_being_processed, cv2.IMREAD_GRAYSCALE)
-            mask2_processed = preprocess_mask(mask2_loaded, target_shape_for_masks)
-            if mask2_processed is not None:
-                upper_m2, lower_m2 = get_surface_lines_from_mask(mask2_processed, PIXEL_OF_INTEREST_IN_MASK)
-                # if upper_m2 is not None: # Calculer min_row_um2 si on reconstruit cette surface
-                #     valid_upper_m2_pts = upper_m2[upper_m2 != -1]
-                #     if valid_upper_m2_pts.size > 0: min_row_um2 = np.min(valid_upper_m2_pts)
-        else:
-            print(f"    Masque 2 non trouvé: {mask_path_being_processed}")
+        
 
+        upper_m2, lower_m2 = get_surface_lines_from_mask(mask2, PIXEL_OF_INTEREST_IN_MASK)
+
+
+        
         all_upper_coords_m2.append(upper_m2)
         all_lower_coords_m2.append(lower_m2)
-        # all_min_rows_upper_m2.append(min_row_um2) # Si besoin
+
 
 # ** Préparation pour le GIF **
         frame_for_gif = bgr_oct_processed.copy() # Image sur laquelle on va dessiner
@@ -381,6 +393,8 @@ def process_oct_series(series_dir_path, mask1_dir_path, mask2_dir_path, output_d
                     #     print(f"      GIF M2 Inf: Point hors limites ({col_idx}, {row_val}) pour image {frame_for_gif.shape}")
         
         all_processed_bgr_for_gif.append(cv2.cvtColor(frame_for_gif, cv2.COLOR_BGR2RGB))
+    print(upper_m1)
+    print(upper_m2)
 
     # --- Fin de la boucle sur les images ---
 
