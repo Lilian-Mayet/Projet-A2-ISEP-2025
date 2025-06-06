@@ -114,7 +114,7 @@ def plot_3d_surface_matplotlib(points_3d, title="Surface 3D", is_mesh=True, grid
             
     else: # Afficher comme un nuage de points
         ax.scatter(x_coords, y_coords, z_coords, s=1, c=z_coords, cmap='viridis', alpha=0.6)
-    ax.axes.set_zlim3d(bottom=0, top=500)
+    ax.axes.set_zlim3d(bottom=0, top=800)
     ax.set_xlabel("X (pixels)")
     ax.set_ylabel("Y (pixels)")
     ax.set_zlabel("Profondeur Z (pixels relatifs)")
